@@ -67,15 +67,22 @@ MODEL = None
 voice_name, voicepack = None, None
 
 def load_voice(voice=None):
-    """Load a voice by name.
-    
+    """Load a voice or blend multiple voices by averaging their weights.
+
     Args:
-        voice (str, optional): The name of the voice to load. Defaults to `af`.
+        voice (str | list, optional): Voice name or `+` separated names.
     """
     global voice_name, voicepack
     voice_name = voice or ('af_bella' or VOICES[0])
-    voise_path = snapshot_path / 'voices' / f'{voice_name}.pt'
-    voicepack = torch.load(voise_path, weights_only=True).to(device)
+    names = voice_name.split("+")
+    packs = []
+    for name in names:
+        voise_path = snapshot_path / 'voices' / f'{name}.pt'
+        packs.append(torch.load(voise_path, weights_only=True).to(device))
+    if len(packs) == 1:
+        voicepack = packs[0]
+    else:
+        voicepack = torch.mean(torch.stack(packs), dim=0)
     print(f'Loaded voice: {voice_name}')
 
 

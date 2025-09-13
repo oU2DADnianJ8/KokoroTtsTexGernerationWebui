@@ -15,8 +15,25 @@ def input_modifier(string, state):
 
 
 def voice_update(voice):
-    load_voice(voice)
-    return gr.Dropdown(choices=VOICES, value=voice, label="Voice", info="Select Voice", interactive=True)
+    """Update the currently loaded voice.
+
+    Args:
+        voice (str | list): Selected voice or list of voices from the UI.
+    """
+    voice_list = voice if isinstance(voice, list) else [voice]
+    voice_str = "+".join(voice_list)
+    load_voice(voice_str)
+    return (
+        gr.Dropdown(
+            choices=VOICES,
+            value=voice_list,
+            label="Voice",
+            info="Select Voice",
+            interactive=True,
+            multiselect=True,
+        ),
+        voice_str,
+    )
 
 def voice_preview():
     run("This is a preview of the selected voice", preview=True)
@@ -29,7 +46,18 @@ def ui():
     info_voice = """Select a Voice. \nThe default voice is a 50-50 mix of Bella & Sarah\nVoices starting with 'a' are American
      english, voices with 'b' are British english"""
     with gr.Accordion("Kokoro"):
-        voice = gr.Dropdown(choices=VOICES, value=VOICES[0], label="Voice", info=info_voice, interactive=True)
+        voice = gr.Dropdown(
+            choices=VOICES,
+            value=[VOICES[0]],
+            label="Voice",
+            info=info_voice,
+            interactive=True,
+            multiselect=True,
+        )
+
+        voice_display = gr.Textbox(
+            value=VOICES[0], label="Selected voice(s)", interactive=False
+        )
 
         preview = gr.Button("Voice preview", type="secondary")
 
@@ -40,7 +68,7 @@ def ui():
         spltting_method = gr.Radio(["Split by sentence", "Split by Word"], info=info_splitting, value="Split by sentence", label_lines=2, interactive=True)
 
 
-    voice.change(voice_update, voice)
+    voice.change(voice_update, voice, [voice, voice_display])
     preview.click(fn=voice_preview, outputs=preview_output)
 
     spltting_method.change(set_plitting_type, spltting_method)
